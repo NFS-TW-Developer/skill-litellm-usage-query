@@ -1,0 +1,71 @@
+import importlib.util
+import pathlib
+import unittest
+
+
+def load_module():
+    script_path = pathlib.Path(__file__).resolve().parents[1] / "scripts" / "query_usage.py"
+    spec = importlib.util.spec_from_file_location("query_usage", script_path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+query_usage = load_module()
+
+
+class QueryUsageTests(unittest.TestCase):
+    def test_format_timezone_slug(self):
+        self.assertEqual(
+            query_usage.format_timezone_slug(-480),
+            "utc-plus-08-00",
+        )
+
+    def test_default_chart_output(self):
+        output = query_usage.default_chart_output(
+            "model-spend",
+            "2026-06-01",
+            "2026-06-05",
+            -480,
+        )
+        self.assertEqual(
+            output.as_posix(),
+            "reports/model-spend-2026-06-01_to_2026-06-05-utc-plus-08-00.png",
+        )
+
+    def test_aggregate_records_collects_api_keys_and_model_groups(self):
+        row = {
+            "date": "2026-06-01",
+            "metrics": {"spend": 1.5, "total_tokens": 100, "api_requests": 2},
+            "breakdown": {
+                "api_keys": {
+                    "key-1": {
+                        "metrics": {"spend": 1.5, "total_tokens": 100, "api_requests": 2},
+                        "metadata": {"key_alias": "demo"},
+                    }
+                },
+                "model_groups": {
+                    "gpt-5.4": {
+                        "metrics": {"spend": 1.5, "total_tokens": 100, "api_requests": 2},
+                        "metadata": {},
+                    }
+                },
+            },
+        }
+        result = query_usage.aggregate_records([row], "2026-06-01")
+        self.assertIn("key-1", result["api_key_breakdown"])
+        self.assertIn("gpt-5.4", result["model_group_breakdown"])
+
+    def test_compress_pie_data_adds_others(self):
+        labels, values = query_usage.compress_pie_data(
+            ["a", "b", "c", "d"],
+            [4, 3, 2, 1],
+            2,
+        )
+        self.assertEqual(labels, ["a", "b", "Others"])
+        self.assertEqual(values, [4, 3, 3])
+
+
+if __name__ == "__main__":
+    unittest.main()

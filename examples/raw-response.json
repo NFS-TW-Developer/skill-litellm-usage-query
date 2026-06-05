@@ -1,0 +1,64 @@
+{
+  "results": [
+    {
+      "date": "2026-06-01",
+      "metrics": {
+        "spend": 34.21,
+        "prompt_tokens": 80000000,
+        "completion_tokens": 2340000,
+        "cache_read_input_tokens": 12000000,
+        "cache_creation_input_tokens": 340000,
+        "total_tokens": 82340000,
+        "successful_requests": 1200,
+        "failed_requests": 40,
+        "api_requests": 1240
+      },
+      "api_key_breakdown": {
+        "example-key-1": {
+          "metrics": {
+            "spend": 18.44,
+            "total_tokens": 40120000,
+            "successful_requests": 420,
+            "failed_requests": 12,
+            "api_requests": 432
+          },
+          "metadata": {
+            "key_alias": "example-client-a",
+            "team_id": "team-alpha"
+          }
+        }
+      },
+      "model_group_breakdown": {
+        "gpt-5.4": {
+          "metrics": {
+            "spend": 13.9,
+            "total_tokens": 51000000,
+            "successful_requests": 520,
+            "failed_requests": 3,
+            "api_requests": 523
+          },
+          "metadata": {}
+        }
+      }
+    }
+  ],
+  "key_map": {
+    "keys": [
+      {
+        "key": "example-key-1",
+        "key_alias": "example-client-a",
+        "key_name": "sk-...demo",
+        "user_id": "user-a",
+        "user_email": "user-a@example.com",
+        "team_id": "team-alpha",
+        "spend": 18.44,
+        "models": [
+          "all-team-models"
+        ],
+        "created_at": "2026-06-01T00:00:00Z",
+        "updated_at": "2026-06-01T12:00:00Z",
+        "last_active": "2026-06-01T12:00:00Z"
+      }
+    ]
+  }
+}
