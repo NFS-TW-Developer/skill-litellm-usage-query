@@ -13,6 +13,7 @@
 - 支援依 `user_id` 聚合的使用者排行
 - 支援 Top Public Model Names 排行
 - 支援輸出 PNG 圖表
+- 設定一律從 `.env` 讀取，不使用作業系統環境變數
 
 ## 快速開始
 
@@ -20,20 +21,24 @@
 # 1. 安裝依賴
 pip install -r requirements.txt
 
-# 2. 設定環境變數
+# 2. 設定 .env
 cp .env.example .env
 # 編輯 .env，填入 LITELLM_API_KEY
+
+# 如需自訂 Gateway，也在 .env 填入 LITELLM_BASE_URL
 
 # 3. 查詢使用量
 python scripts/query_usage.py --start-date 2026-06-01 --end-date 2026-06-05
 ```
 
-## 環境變數
+## .env 設定
 
-| 變數 | 說明 | 必填 |
+| 欄位 | 說明 | 必填 |
 | --- | --- | --- |
 | `LITELLM_API_KEY` | API Key，以 `x-litellm-api-key` header 送出 | 是 |
 | `LITELLM_BASE_URL` | Gateway 基底網址 | 否（有預設值） |
+
+腳本預設只會讀取 `.env` 檔案內容與 CLI 參數，不會讀取作業系統環境變數。
 
 ## API 規格
 

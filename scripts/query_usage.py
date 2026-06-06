@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 from datetime import date
 from datetime import timedelta
@@ -29,20 +28,26 @@ if callable(stdout_reconfigure):
     stdout_reconfigure(encoding="utf-8")
 
 
-def load_dotenv(path: Path) -> None:
-    """簡易讀取 .env，不覆蓋已存在的環境變數。"""
+def load_dotenv(path: Path) -> dict[str, str]:
+    """簡易讀取 .env，回傳解析後的設定。"""
+    values: dict[str, str] = {}
     if not path.is_file():
-        return
+        return values
     for line in path.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
         key, _, value = line.partition("=")
         key, value = key.strip(), value.strip().strip('"').strip("'")
-        os.environ.setdefault(key, value)
+        values[key] = value
+    return values
 
 
-def parse_args() -> argparse.Namespace:
+def build_parser(
+    env_values: dict[str, str] | None = None, env_path: Path | None = None
+) -> argparse.ArgumentParser:
+    env_values = env_values or {}
+    env_path = env_path or Path(__file__).resolve().parent.parent / ".env"
     parser = argparse.ArgumentParser(
         description="查詢 LiteLLM Gateway 使用者每日使用量（aggregated activity）"
     )
@@ -56,13 +61,13 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--base-url",
-        default=os.environ.get("LITELLM_BASE_URL", DEFAULT_BASE_URL),
+        default=env_values.get("LITELLM_BASE_URL", DEFAULT_BASE_URL),
         help="Gateway 基底網址",
     )
     parser.add_argument(
         "--api-key",
-        default=os.environ.get("LITELLM_API_KEY"),
-        help="API Key（也可用環境變數 LITELLM_API_KEY）",
+        default=env_values.get("LITELLM_API_KEY"),
+        help="API Key（來自 .env 或 --api-key）",
     )
     parser.add_argument(
         "--raw",
@@ -126,10 +131,33 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--env-file",
-        default=None,
+        default=str(env_path),
         help="自訂 .env 路徑（預設為腳本上層目錄的 .env）",
     )
-    return parser.parse_args()
+    parser.add_argument(
+        "--debug-env",
+        action="store_true",
+        help="顯示載入的 env 檔與遮罩後的設定狀態，不輸出敏感值",
+    )
+    return parser
+
+
+def parse_args() -> argparse.Namespace:
+    pre_parser = argparse.ArgumentParser(add_help=False)
+    pre_parser.add_argument("--env-file", default=None)
+    pre_parser.add_argument("--debug-env", action="store_true")
+    pre_args, _ = pre_parser.parse_known_args()
+
+    env_path = (
+        Path(pre_args.env_file)
+        if pre_args.env_file
+        else Path(__file__).resolve().parent.parent / ".env"
+    )
+    env_values = load_dotenv(env_path)
+    parser = build_parser(env_values, env_path)
+    args = parser.parse_args()
+    args.env_file = str(env_path)
+    return args
 
 
 def validate_date(value: str, label: str) -> str:
@@ -138,6 +166,28 @@ def validate_date(value: str, label: str) -> str:
     except ValueError as exc:
         raise SystemExit(f"{label} 格式錯誤，請使用 YYYY-MM-DD：{value}") from exc
     return value
+
+
+def mask_api_key(api_key: str | None) -> str:
+    if not api_key:
+        return "missing"
+    if len(api_key) <= 8:
+        return f"set(len={len(api_key)})"
+    return f"set(len={len(api_key)}, prefix={api_key[:4]}, suffix={api_key[-4:]})"
+
+
+def api_key_format_status(api_key: str | None) -> str:
+    if not api_key:
+        return "missing"
+    if api_key.startswith("sk-") and " " not in api_key and "\t" not in api_key:
+        return f"looks-valid(len={len(api_key)})"
+    return f"looks-suspicious(len={len(api_key)})"
+
+
+def debug_env_state(env_path: Path, base_url: str, api_key: str | None) -> None:
+    print(f"env_file={env_path} exists={env_path.is_file()}")
+    print(f"base_url={base_url}")
+    print(f"api_key={mask_api_key(api_key)} {api_key_format_status(api_key)}")
 
 
 def fetch_usage(
@@ -640,13 +690,15 @@ def render_chart(data: dict[str, Any], chart: str, output_path: Path) -> Path:
 
     if is_pie:
         total = sum(values)
-        wedges, _, autotexts = ax.pie(
+        pie_result = ax.pie(
             values,
             startangle=90,
             counterclock=False,
             autopct=lambda pct: f"{pct:.1f}%" if pct >= 3 else "",
             pctdistance=0.72,
         )
+        wedges = pie_result[0]
+        autotexts = pie_result[-1]
         for autotext in autotexts:
             autotext.set_fontsize(9)
             autotext.set_color("white")
@@ -872,18 +924,13 @@ def summarize(data: Any) -> str:
 def main() -> None:
     args = parse_args()
 
-    env_path = (
-        Path(args.env_file)
-        if args.env_file
-        else Path(__file__).resolve().parent.parent / ".env"
-    )
-    load_dotenv(env_path)
-
-    api_key = args.api_key or os.environ.get("LITELLM_API_KEY")
+    if args.debug_env:
+        debug_env_state(Path(args.env_file), args.base_url, args.api_key)
+    api_key = args.api_key
     if not api_key:
         raise SystemExit(
-            "缺少 API Key。請設定環境變數 LITELLM_API_KEY，"
-            "或在專案根目錄建立 .env 檔。"
+            "缺少 API Key。請在 .env 裡設定 LITELLM_API_KEY，"
+            "或透過 --api-key 指定。"
         )
 
     start_date = validate_date(args.start_date, "start_date")

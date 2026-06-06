@@ -1,5 +1,6 @@
 import importlib.util
 import pathlib
+import tempfile
 import unittest
 
 
@@ -16,6 +17,27 @@ query_usage = load_module()
 
 
 class QueryUsageTests(unittest.TestCase):
+    def test_load_dotenv_returns_values(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            env_path = pathlib.Path(tmpdir) / ".env"
+            env_path.write_text(
+                "LITELLM_BASE_URL=https://example.com/\nLITELLM_API_KEY=sk-test123\n",
+                encoding="utf-8",
+            )
+            values = query_usage.load_dotenv(env_path)
+
+        self.assertEqual(values["LITELLM_BASE_URL"], "https://example.com/")
+        self.assertEqual(values["LITELLM_API_KEY"], "sk-test123")
+
+    def test_build_parser_uses_env_values(self):
+        parser = query_usage.build_parser(
+            {"LITELLM_BASE_URL": "https://example.com/", "LITELLM_API_KEY": "sk-test123"},
+            pathlib.Path(".env"),
+        )
+        args = parser.parse_args(["--start-date", "2026-06-01", "--end-date", "2026-06-02"])
+        self.assertEqual(args.base_url, "https://example.com/")
+        self.assertEqual(args.api_key, "sk-test123")
+
     def test_format_timezone_slug(self):
         self.assertEqual(
             query_usage.format_timezone_slug(-480),
@@ -65,6 +87,25 @@ class QueryUsageTests(unittest.TestCase):
         )
         self.assertEqual(labels, ["a", "b", "Others"])
         self.assertEqual(values, [4, 3, 3])
+
+    def test_api_key_format_status(self):
+        self.assertEqual(query_usage.api_key_format_status(None), "missing")
+        self.assertEqual(
+            query_usage.api_key_format_status("sk-abc12345"),
+            "looks-valid(len=11)",
+        )
+        self.assertEqual(
+            query_usage.api_key_format_status("bad key"),
+            "looks-suspicious(len=7)",
+        )
+
+    def test_mask_api_key(self):
+        self.assertEqual(query_usage.mask_api_key(None), "missing")
+        self.assertEqual(query_usage.mask_api_key("abcd"), "set(len=4)")
+        self.assertEqual(
+            query_usage.mask_api_key("sk-abc12345"),
+            "set(len=11, prefix=sk-a, suffix=2345)",
+        )
 
 
 if __name__ == "__main__":

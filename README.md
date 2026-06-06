@@ -15,6 +15,7 @@ LiteLLM Gateway 使用量查詢 skill repo，提供：
 - 輸出每日摘要、使用者排行、Top Public Model Names 排行
 - 支援 JSON 原始輸出
 - 支援 PNG 圖表與圓餅圖
+- 設定一律從專案根目錄 `.env` 讀取，不使用作業系統環境變數
 
 ## 快速開始
 
@@ -22,6 +23,7 @@ LiteLLM Gateway 使用量查詢 skill repo，提供：
 pip install -r requirements.txt
 cp .env.example .env
 # 編輯 .env，填入 LITELLM_API_KEY
+# 如需自訂 Gateway，也在 .env 填入 LITELLM_BASE_URL
 
 python scripts/query_usage.py --start-date 2026-06-01 --end-date 2026-06-05
 ```
