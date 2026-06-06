@@ -1,5 +1,6 @@
 ---
 name: litellm-usage-query
+category: mlops
 description: >-
   Query LiteLLM Gateway daily usage via the aggregated activity API.
   Use when the user asks about LiteLLM usage, token consumption, spend,
