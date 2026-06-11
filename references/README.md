@@ -14,12 +14,15 @@
 - 支援 Top Public Model Names 排行
 - 支援輸出 PNG 圖表
 - 設定一律從 `.env` 讀取，不使用作業系統環境變數
+- 有 `.venv` 時優先使用專案內的 Python 與 pip
 
 ## 快速開始
 
+優先使用專案內的 `.venv`：
+
 ```bash
 # 1. 安裝依賴
-pip install -r requirements.txt
+.\.venv\Scripts\python -m pip install -r requirements.txt
 
 # 2. 設定 .env
 cp .env.example .env
@@ -28,8 +31,10 @@ cp .env.example .env
 # 如需自訂 Gateway，也在 .env 填入 LITELLM_BASE_URL
 
 # 3. 查詢使用量
-python scripts/query_usage.py --start-date 2026-06-01 --end-date 2026-06-05
+.\.venv\Scripts\python scripts/query_usage.py --start-date 2026-06-01 --end-date 2026-06-05
 ```
+
+如果尚未建立 `.venv`，可先用目前環境的 `python` 與 `pip`。
 
 ## .env 設定
 

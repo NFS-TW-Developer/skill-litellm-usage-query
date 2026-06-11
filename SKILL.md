@@ -16,20 +16,23 @@ disable-model-invocation: true
 
 ## 前置條件
 
-1. 已安裝依賴：`pip install -r requirements.txt`
-2. 已準備 `.env` 設定檔（header 名稱：`x-litellm-api-key`）
-3. 複製 `.env.example` 為 `.env` 並填入 `LITELLM_API_KEY`
+1. 優先使用專案內的 `.venv` 執行 Python 與安裝依賴
+2. 若 `.venv` 不存在，再使用目前環境的 Python
+3. 已準備 `.env` 設定檔（header 名稱：`x-litellm-api-key`）
+4. 複製 `.env.example` 為 `.env` 並填入 `LITELLM_API_KEY`
 
 ## 執行腳本
 
-從 `litellm-usage-query` 目錄執行：
+從 `litellm-usage-query` 目錄執行；若有 `.venv`，請優先使用 `.venv` 裡的 Python：
 
 ```bash
-python scripts/query_usage.py \
+.\.venv\Scripts\python scripts/query_usage.py \
   --start-date 2026-06-01 \
   --end-date 2026-06-05 \
   --timezone -480
 ```
+
+若尚未建立 `.venv`，再改用目前環境的 `python`。
 
 常用參數：
 

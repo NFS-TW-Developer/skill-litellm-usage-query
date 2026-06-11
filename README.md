@@ -16,17 +16,22 @@ LiteLLM Gateway 使用量查詢 skill repo，提供：
 - 支援 JSON 原始輸出
 - 支援 PNG 圖表與圓餅圖
 - 設定一律從專案根目錄 `.env` 讀取，不使用作業系統環境變數
+- 有 `.venv` 時優先使用專案內的 Python 與 pip
 
 ## 快速開始
 
+如果你有建立專案內的 `.venv`，請優先使用它來安裝與執行：
+
 ```bash
-pip install -r requirements.txt
+.\.venv\Scripts\python -m pip install -r requirements.txt
 cp .env.example .env
 # 編輯 .env，填入 LITELLM_API_KEY
 # 如需自訂 Gateway，也在 .env 填入 LITELLM_BASE_URL
 
-python scripts/query_usage.py --start-date 2026-06-01 --end-date 2026-06-05
+.\.venv\Scripts\python scripts/query_usage.py --start-date 2026-06-01 --end-date 2026-06-05
 ```
+
+如果還沒有 `.venv`，也可以先用目前環境的 `python` 執行。
 
 ## 常用指令
 

@@ -2,40 +2,46 @@
 
 ## 直接執行腳本
 
+如果有 `.venv`，請優先用它：
+
 ```bash
 # 查詢 6 月 1 日到 5 日的使用量（預設逐日查詢並彙整當日資料）
-python scripts/query_usage.py --start-date 2026-06-01 --end-date 2026-06-05
+.\.venv\Scripts\python scripts/query_usage.py --start-date 2026-06-01 --end-date 2026-06-05
 
 # 查看逐日彙整後的 JSON（欄位對不上時用）
-python scripts/query_usage.py --start-date 2026-06-01 --end-date 2026-06-05 --raw
+.\.venv\Scripts\python scripts/query_usage.py --start-date 2026-06-01 --end-date 2026-06-05 --raw
 
 # 同時取回 key 與 user_id 的對應資料，並輸出使用者排行
-python scripts/query_usage.py --start-date 2026-06-01 --end-date 2026-06-05 --raw --include-key-map
+.\.venv\Scripts\python scripts/query_usage.py --start-date 2026-06-01 --end-date 2026-06-05 --raw --include-key-map
 
 # 依 Tokens 排使用者排行
-python scripts/query_usage.py --start-date 2026-06-01 --end-date 2026-06-05 --include-key-map --user-rank-by tokens
+.\.venv\Scripts\python scripts/query_usage.py --start-date 2026-06-01 --end-date 2026-06-05 --include-key-map --user-rank-by tokens
 
 # 輸出 Top Public Model Names，依花費排序
-python scripts/query_usage.py --start-date 2026-06-01 --end-date 2026-06-05 --include-model-ranking --model-rank-by spend
+.\.venv\Scripts\python scripts/query_usage.py --start-date 2026-06-01 --end-date 2026-06-05 --include-model-ranking --model-rank-by spend
 
 # 只看前 5 名排行
-python scripts/query_usage.py --start-date 2026-06-01 --end-date 2026-06-05 --include-key-map --include-model-ranking --top 5
+.\.venv\Scripts\python scripts/query_usage.py --start-date 2026-06-01 --end-date 2026-06-05 --include-key-map --include-model-ranking --top 5
 
 # 輸出 Top Public Model Names 花費圖
-python scripts/query_usage.py --start-date 2026-06-01 --end-date 2026-06-05 --include-model-ranking --chart model-spend --chart-output reports/model-spend.png
+.\.venv\Scripts\python scripts/query_usage.py --start-date 2026-06-01 --end-date 2026-06-05 --include-model-ranking --chart model-spend --chart-output reports/model-spend.png
 
 # 輸出 user spend 圓餅圖
-python scripts/query_usage.py --start-date 2026-06-01 --end-date 2026-06-05 --include-key-map --chart user-spend-pie --chart-output reports/user-spend-pie.png
+.\.venv\Scripts\python scripts/query_usage.py --start-date 2026-06-01 --end-date 2026-06-05 --include-key-map --chart user-spend-pie --chart-output reports/user-spend-pie.png
 
 # 不指定 chart-output，使用自動帶日期區間與時區的檔名
-python scripts/query_usage.py --start-date 2026-06-01 --end-date 2026-06-05 --include-model-ranking --chart model-spend
+.\.venv\Scripts\python scripts/query_usage.py --start-date 2026-06-01 --end-date 2026-06-05 --include-model-ranking --chart model-spend
 
 # 指定自訂 Gateway 網址
-python scripts/query_usage.py \
+.\.venv\Scripts\python scripts/query_usage.py \
   --start-date 2026-06-01 \
   --end-date 2026-06-05 \
   --base-url http://litellm:4000
 ```
+
+如果還沒有 `.venv`，就把上面的 `.\.venv\Scripts\python` 換成 `python`。
+
+如果還沒有 `.venv`，就把上面的 `.\.venv\Scripts\python` 換成 `python`。
 
 ## 在 Agent 裡請求查詢
 
