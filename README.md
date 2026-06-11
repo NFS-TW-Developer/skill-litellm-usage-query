@@ -11,7 +11,7 @@ LiteLLM Gateway 使用量查詢 skill repo，提供：
 ## 功能
 
 - 查詢 `/user/daily/activity/aggregated`
-- 預設逐日查詢並處理時區邊界
+- 預設逐日查詢，並彙整當日資料
 - 輸出每日摘要、使用者排行、Top Public Model Names 排行
 - 支援 JSON 原始輸出
 - 支援 PNG 圖表與圓餅圖

@@ -6,7 +6,7 @@
 
 - 查詢 `/user/daily/activity/aggregated` 端點
 - 以 `x-litellm-api-key` header 認證
-- 預設逐日查詢並合併 API 回傳的相鄰日期資料，避開時區邊界問題
+- 預設逐日查詢並彙整當日資料
 - 輸出每日使用量摘要（請求數、Tokens、花費）
 - 支援 `--raw` 查看逐日彙整後的 JSON
 - 支援 `--include-key-map` 附帶抓取 `/key/list` 的 key/user 對應資料
@@ -54,8 +54,8 @@ Header: x-litellm-api-key: <your-api-key>
 ## 查詢邏輯
 
 - 腳本會把區間拆成每天各查一次
-- 每次單日查詢若 API 回傳前一天或後一天的資料，會一併加總到該查詢日
-- 因此輸出結果以「你的 `timezone` 下的最終每日數據」為準
+- 每次單日查詢彙整當日資料
+- 因此輸出結果以當日彙整後的每日數據為準
 
 ## User / Key 對應
 

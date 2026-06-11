@@ -79,6 +79,16 @@ class QueryUsageTests(unittest.TestCase):
         self.assertIn("key-1", result["api_key_breakdown"])
         self.assertIn("gpt-5.4", result["model_group_breakdown"])
 
+    def test_filter_records_for_day_keeps_only_matching_date(self):
+        records = [
+            {"date": "2026-06-06", "metrics": {"spend": 10}},
+            {"date": "2026-06-07", "metrics": {"spend": 20}},
+            {"metrics": {"spend": 30}},
+        ]
+        filtered = query_usage.filter_records_for_day(records, "2026-06-07")
+        self.assertEqual(len(filtered), 1)
+        self.assertEqual(filtered[0]["date"], "2026-06-07")
+
     def test_compress_pie_data_adds_others(self):
         labels, values = query_usage.compress_pie_data(
             ["a", "b", "c", "d"],

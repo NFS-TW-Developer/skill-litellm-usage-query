@@ -350,6 +350,15 @@ def aggregate_records(records: list[dict[str, Any]], label: str) -> dict[str, An
     return totals
 
 
+def filter_records_for_day(records: list[dict[str, Any]], day: str) -> list[dict[str, Any]]:
+    filtered: list[dict[str, Any]] = []
+    for row in records:
+        if row.get("date") != day:
+            continue
+        filtered.append(row)
+    return filtered
+
+
 def fetch_usage_split_by_day(
     base_url: str,
     api_key: str,
@@ -357,7 +366,7 @@ def fetch_usage_split_by_day(
     end_date: str,
     timezone: int,
 ) -> dict[str, Any]:
-    """逐日查詢並合併每次回傳的相鄰日期資料。"""
+    """逐日查詢並彙整當日資料。"""
     current = date.fromisoformat(start_date)
     end = date.fromisoformat(end_date)
     results: list[dict[str, Any]] = []
@@ -365,7 +374,8 @@ def fetch_usage_split_by_day(
     while current <= end:
         day = current.isoformat()
         data = fetch_usage(base_url, api_key, day, day, timezone)
-        results.append(aggregate_records(extract_records(data), day))
+        records = filter_records_for_day(extract_records(data), day)
+        results.append(aggregate_records(records, day))
         current += timedelta(days=1)
 
     return {"results": results}

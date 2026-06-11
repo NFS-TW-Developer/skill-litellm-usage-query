@@ -12,7 +12,7 @@ disable-model-invocation: true
 
 ## 用途
 
-透過 Python 腳本查詢 LiteLLM Gateway 的每日使用量（aggregated activity），並以逐日查詢方式處理時區邊界後整理成可讀摘要。
+透過 Python 腳本查詢 LiteLLM Gateway 的每日使用量（aggregated activity），並整理成可讀摘要。
 
 ## 前置條件
 
@@ -67,7 +67,7 @@ user / model 圖表會以高到低排序，並使用橫向長條圖輸出。
 1. 確認使用者要的日期區間與時區
 2. 確認 `.env` 已有 `LITELLM_API_KEY`
 3. 執行 `scripts/query_usage.py`
-4. 腳本會預設逐日查詢，並把單日查詢時 API 回傳的相鄰日期資料合併為該日結果
+4. 腳本會預設逐日查詢，並彙整單日回傳資料
 5. 若需要把 `api_key_breakdown` 對應回 `user_id` / `user_email`，並做使用者排行，加入 `--include-key-map`
 6. 若摘要欄位對不上，加上 `--raw` 查看逐日彙整後的 JSON 後再解讀
 7. 以「摘要 + 重點觀察」回覆使用者
