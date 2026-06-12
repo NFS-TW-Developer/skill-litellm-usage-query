@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt
 DEFAULT_BASE_URL = "http://litellm:4000"
 ENDPOINT_PATH = "/user/daily/activity/aggregated"
 KEY_LIST_PATH = "/key/list"
+ROUTER_SETTINGS_PATH = "/router/settings"
 
 stdout_reconfigure = getattr(sys.stdout, "reconfigure", None)
 if callable(stdout_reconfigure):
@@ -437,6 +438,30 @@ def fetch_key_map(base_url: str, api_key: str) -> dict[str, Any]:
     return {"keys": mappings}
 
 
+def fetch_router_model_aliases(base_url: str, api_key: str) -> dict[str, str]:
+    payload = fetch_json(base_url, api_key, ROUTER_SETTINGS_PATH)
+    if not isinstance(payload, dict):
+        return {}
+
+    current_values_any = payload.get("current_values")
+    current_values = current_values_any if isinstance(current_values_any, dict) else {}
+    alias_map_any = current_values.get("model_group_alias")
+    if not isinstance(alias_map_any, dict):
+        return {}
+
+    aliases: dict[str, str] = {}
+    for internal_name, public_name in alias_map_any.items():
+        if isinstance(internal_name, str) and isinstance(public_name, str):
+            aliases[internal_name] = public_name
+    return aliases
+
+
+def resolve_public_model_name(model_group_name: Any, model_aliases: dict[str, str]) -> str:
+    if isinstance(model_group_name, str) and model_group_name:
+        return model_aliases.get(model_group_name, model_group_name)
+    return "unknown"
+
+
 def build_user_ranking(
     data: dict[str, Any], key_map: dict[str, Any], rank_by: str
 ) -> list[dict[str, Any]]:
@@ -511,23 +536,31 @@ def build_user_ranking(
     return ranking
 
 
-def build_model_ranking(data: dict[str, Any], rank_by: str) -> list[dict[str, Any]]:
+def build_model_ranking(
+    data: dict[str, Any], rank_by: str, model_aliases: dict[str, str] | None = None
+) -> list[dict[str, Any]]:
     model_totals: dict[str, dict[str, Any]] = {}
+    aliases = model_aliases or {}
     records = extract_records(data)
     for record in records:
         model_group_breakdown = record.get("model_group_breakdown")
         if not isinstance(model_group_breakdown, dict):
             continue
-        for public_name, entry in model_group_breakdown.items():
+        for model_group_name, entry in model_group_breakdown.items():
             if not isinstance(entry, dict):
                 continue
+            public_name = resolve_public_model_name(model_group_name, aliases)
             row = model_totals.setdefault(
                 public_name,
                 {
                     "public_model_name": public_name,
+                    "model_group_names": set(),
                     "metrics": empty_metrics(),
                 },
             )
+            model_group_names = row.get("model_group_names")
+            if isinstance(model_group_names, set) and isinstance(model_group_name, str):
+                model_group_names.add(model_group_name)
             entry_metrics_any = entry.get("metrics")
             entry_metrics: dict[str, Any] = (
                 entry_metrics_any if isinstance(entry_metrics_any, dict) else {}
@@ -537,9 +570,13 @@ def build_model_ranking(data: dict[str, Any], rank_by: str) -> list[dict[str, An
 
     ranking: list[dict[str, Any]] = []
     for row in model_totals.values():
+        model_group_names = row.get("model_group_names")
         ranking.append(
             {
                 "public_model_name": row["public_model_name"],
+                "model_group_names": sorted(model_group_names)
+                if isinstance(model_group_names, set)
+                else [],
                 "metrics": row["metrics"],
             }
         )
@@ -912,15 +949,20 @@ def summarize(data: Any) -> str:
             }.get(model_rank_by, "花費")
         lines.append(f"## Top Public Model Names（依 {model_rank_label} 排序）")
         lines.append("")
-        lines.append("| public_model_name | 成功 | 失敗 | 請求數 | Tokens | 花費 |")
-        lines.append("| --- | ---: | ---: | ---: | ---: | ---: |")
+        lines.append("| public_model_name | internal_model_groups | 成功 | 失敗 | 請求數 | Tokens | 花費 |")
+        lines.append("| --- | --- | ---: | ---: | ---: | ---: | ---: |")
         for row in model_ranking[:top_n]:
             if not isinstance(row, dict):
                 continue
             metrics_any = row.get("metrics")
             metrics: dict[str, Any] = metrics_any if isinstance(metrics_any, dict) else {}
+            model_group_names_any = row.get("model_group_names")
+            model_group_names = (
+                model_group_names_any if isinstance(model_group_names_any, list) else []
+            )
             lines.append(
                 f"| {row.get('public_model_name') or '-'} | "
+                f"{', '.join(model_group_names) if model_group_names else '-'} | "
                 f"{as_number(metrics.get('successful_requests')):,.0f} | "
                 f"{as_number(metrics.get('failed_requests')):,.0f} | "
                 f"{as_number(metrics.get('api_requests')):,.0f} | "
@@ -966,7 +1008,10 @@ def main() -> None:
 
     if args.include_model_ranking:
         data["model_rank_by"] = args.model_rank_by
-        data["model_ranking"] = build_model_ranking(data, args.model_rank_by)
+        data["model_aliases"] = fetch_router_model_aliases(args.base_url, api_key)
+        data["model_ranking"] = build_model_ranking(
+            data, args.model_rank_by, data["model_aliases"]
+        )
 
     chart_path: Path | None = None
     if args.chart:
